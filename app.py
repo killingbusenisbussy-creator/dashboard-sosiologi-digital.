@@ -52,6 +52,12 @@ st.markdown("""
 
 load_dotenv()
 
+# Cek dari Streamlit Secrets dulu, kalau tidak ada baru cek dari .env
+try:
+    api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+except Exception:
+    api_key = os.getenv("GEMINI_API_KEY")
+
 # ---------------------------------------------------------
 # Sidebar: Pengaturan Data & API
 # ---------------------------------------------------------
@@ -61,14 +67,10 @@ with st.sidebar:
     
     st.markdown("---")
     st.subheader("🔑 Status Gemini API")
-    env_api_key = os.getenv("GEMINI_API_KEY", "")
-    
-    api_key_input = st.text_input(
-        "Gemini API Key (.env default):", 
-        value=env_api_key, 
-        type="password",
-        help="API Key otomatis dimuat dari file .env"
-    )
+    if api_key:
+        st.sidebar.success("✅ Gemini API Terhubung")
+    else:
+        st.sidebar.error("❌ Gemini API Key Belum Dikonfigurasi")
     
     model_choice = st.selectbox(
         "Pilih Model Gemini:",
@@ -218,12 +220,12 @@ if df is not None:
         analysis_state_key = f"analysis_{var_x}_{var_y}"
 
         if generate_button:
-            if not api_key_input:
-                st.error("API Key Gemini tidak ditemukan! Masukkan API Key di sidebar atau buat file .env.")
+            if not api_key:
+                st.error("API Key Gemini tidak ditemukan! Konfigurasikan GEMINI_API_KEY di Streamlit Secrets atau file .env.")
             else:
                 with st.spinner("Menghubungi Gemini AI untuk menyusun analisis sosiologis kritis..."):
                     try:
-                        client = genai.Client(api_key=api_key_input)
+                        client = genai.Client(api_key=api_key)
                         system_instruction = (
                             "Kamu adalah Ahli Sosiologi Digital. Tugasmu adalah menginterpretasikan hasil "
                             "uji statistik korelasi menjadi narasi analisis sosiologis yang tajam, kritis, "
